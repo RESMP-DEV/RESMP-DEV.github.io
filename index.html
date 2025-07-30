@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Summary: Medical Article Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Tech -->
+    <!-- Application Structure Plan: A single-page, top-down scrolling application divided into four main sections: 'Overview', 'Interactive Architecture', 'Technology Stack', and 'Detailed Diagram'. This structure guides the user from a high-level business case to a granular technical view. A sticky navigation bar allows for quick access to any section. The key interaction is clicking on architecture stages and hovering over technology cards to reveal detailed information, making the exploration of a complex system manageable and engaging. The new detailed diagram section offers a deeper technical dive for interested stakeholders. -->
+    <!-- Visualization & Content Choices: The core 'High-Level Architecture' remains an interactive, clickable flow. The 'Key Technology Components' list is an interactive grid of cards. The new 'Detailed Technical Diagram' uses structured HTML/CSS to create a flowchart, visually distinguishing between proprietary code and external API calls. Goal: Explain Process in detail. Method: Styled divs and arrows. Justification: This approach avoids external JS libraries for diagramming, ensuring compatibility and speed, while clearly communicating the technical workflow and component boundaries as requested. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .tech-card .back {
+            transform: rotateY(180deg);
+        }
+        .tech-card:hover .front {
+            transform: rotateY(180deg);
+        }
+        .tech-card:hover .back {
+            transform: rotateY(0deg);
+        }
+        .modal {
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        .modal.hidden {
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+        /* Styles for the detailed diagram */
+        .diagram-flow {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .diagram-node {
+            border: 2px solid;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            margin: 0.5rem 0;
+            width: 80%;
+            max-width: 500px;
+        }
+        .node-proprietary {
+            background-color: #e0f2fe; /* sky-100 */
+            border-color: #7dd3fc; /* sky-300 */
+            color: #0c4a6e; /* sky-900 */
+        }
+        .node-api {
+            background-color: #fefce8; /* yellow-50 */
+            border-color: #fde047; /* yellow-300 */
+            color: #713f12; /* yellow-900 */
+        }
+        .diagram-arrow {
+            font-size: 2rem;
+            color: #9ca3af; /* gray-400 */
+            margin: 0.25rem 0;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <!-- Password Gate -->
+    <div id="password-gate" class="fixed inset-0 bg-slate-900 bg-opacity-95 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity duration-500">
+        <div class="w-full max-w-md p-8 bg-white rounded-lg shadow-2xl text-center">
+            <h2 class="text-2xl font-bold text-slate-800 mb-4">Enter Password to View</h2>
+            <p class="text-slate-500 mb-6">This is a private-access demonstration.</p>
+            <form id="password-form">
+                <input type="password" id="password-input" class="w-full px-4 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" placeholder="Password" autofocus>
+                <p id="error-message" class="text-red-500 text-sm mt-2 hidden">Incorrect Password. Please try again.</p>
+                <button type="submit" class="w-full mt-6 bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">Unlock</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content Wrapper -->
+    <div id="main-content" class="hidden">
+        <!-- Header & Navigation -->
+        <header id="header" class="bg-white/80 backdrop-blur-lg sticky top-0 z-40 shadow-sm">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex-shrink-0">
+                        <h1 class="text-xl font-bold text-slate-900">Medical Article Generator</h1>
+                    </div>
+                    <nav class="hidden md:flex md:space-x-8">
+                        <a href="#overview" class="font-medium text-slate-600 hover:text-blue-600 transition-colors">Overview</a>
+                        <a href="#architecture" class="font-medium text-slate-600 hover:text-blue-600 transition-colors">Architecture</a>
+                        <a href="#tech-stack" class="font-medium text-slate-600 hover:text-blue-600 transition-colors">Technology</a>
+                        <a href="#detailed-diagram" class="font-medium text-slate-600 hover:text-blue-600 transition-colors">Diagram</a>
+                    </nav>
+                    <div class="md:hidden">
+                        <button id="mobile-menu-button" class="p-2 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="md:hidden hidden">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                    <a href="#overview" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50">Overview</a>
+                    <a href="#architecture" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50">Architecture</a>
+                    <a href="#tech-stack" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50">Technology</a>
+                    <a href="#detailed-diagram" class="block px-3 py-2 rounded-md text-base font-medium text-slate-700 hover:text-blue-600 hover:bg-slate-50">Diagram</a>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <!-- Section 1: Overview / Business Purpose -->
+            <section id="overview" class="py-20 md:py-28">
+                <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+                    <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+                        Automating Evidence-Based Medical Content
+                    </h2>
+                    <p class="mt-6 max-w-3xl mx-auto text-lg leading-8 text-slate-600">
+                        This project demonstrates a state-of-the-art Retrieval-Augmented Generation (RAG) pipeline designed to automate the creation of scientifically-grounded medical articles. By programmatically sourcing and citing information from the trusted NCBI PubMed database, the system can generate comprehensive articles on complex medical topics, complete with relevant, AI-generated medical illustrations. This powerful prototype proves the core technical feasibility of leveraging generative AI to rapidly produce accurate, evidence-based medical content, significantly reducing manual research and writing time.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Section 2: Interactive Architecture -->
+            <section id="architecture" class="py-20 md:py-28 bg-white">
+                <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center">
+                        <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">A High-Level View of the Pipeline</h2>
+                        <p class="mt-4 max-w-2xl mx-auto text-lg leading-8 text-slate-600">
+                            The pipeline transforms trusted source material into a finished, illustrated article through a three-stage process. Click on any stage to learn more about the technical details and its role in the workflow.
+                        </p>
+                    </div>
+
+                    <div class="mt-16 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-0">
+                        <!-- Step 1 -->
+                        <button data-modal-target="modal-1" class="architecture-step group w-full md:w-1/4">
+                            <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 text-center transition-all duration-300 group-hover:bg-blue-100 group-hover:scale-105 group-hover:shadow-xl">
+                                <div class="text-4xl font-bold text-blue-600">1</div>
+                                <h3 class="mt-2 text-xl font-bold text-blue-800">Ingest & Index</h3>
+                                <p class="mt-2 text-sm text-blue-700">PubMed articles are processed, vectorized, and stored in a knowledge base.</p>
+                            </div>
+                        </button>
+
+                        <div class="text-4xl text-slate-300 mx-6 transform md:-rotate-0 rotate-90">&rarr;</div>
+
+                        <!-- Step 2 -->
+                        <button data-modal-target="modal-2" class="architecture-step group w-full md:w-1/4">
+                            <div class="bg-green-50 border-2 border-green-200 rounded-xl p-6 text-center transition-all duration-300 group-hover:bg-green-100 group-hover:scale-105 group-hover:shadow-xl">
+                                <div class="text-4xl font-bold text-green-600">2</div>
+                                <h3 class="mt-2 text-xl font-bold text-green-800">Retrieve & Augment</h3>
+                                <p class="mt-2 text-sm text-green-700">A user query retrieves the most relevant information from the knowledge base.</p>
+                            </div>
+                        </button>
+
+                        <div class="text-4xl text-slate-300 mx-6 transform md:-rotate-0 rotate-90">&rarr;</div>
+
+                        <!-- Step 3 -->
+                        <button data-modal-target="modal-3" class="architecture-step group w-full md:w-1/4">
+                            <div class="bg-amber-50 border-2 border-amber-200 rounded-xl p-6 text-center transition-all duration-300 group-hover:bg-amber-100 group-hover:scale-105 group-hover:shadow-xl">
+                                <div class="text-4xl font-bold text-amber-600">3</div>
+                                <h3 class="mt-2 text-xl font-bold text-amber-800">Generate & Synthesize</h3>
+                                <p class="mt-2 text-sm text-amber-700">AI models write the article and create an illustration based on the data.</p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: Technology Stack -->
+            <section id="tech-stack" class="py-20 md:py-28">
+                <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center">
+                        <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Core Technology Components</h2>
+                        <p class="mt-4 max-w-2xl mx-auto text-lg leading-8 text-slate-600">
+                            The pipeline is built with a curated set of modern, open-source technologies. Hover over (or tap on) a card to see how each component contributes to the project's success.
+                        </p>
+                    </div>
+
+                    <div class="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Tech Card: Data Source -->
+                        <div class="tech-card" style="perspective: 1000px;">
+                            <div class="relative w-full h-52 transition-transform duration-500" style="transform-style: preserve-3d;">
+                                <div class="front absolute w-full h-full bg-white rounded-lg shadow-md p-6 flex flex-col justify-center items-center text-center" style="backface-visibility: hidden;">
+                                    <div class="text-4xl mb-2">📚</div>
+                                    <h3 class="text-lg font-bold text-slate-900">Data Source</h3>
+                                    <p class="text-slate-600">Entrez API (PubMed)</p>
+                                </div>
+                                <div class="back absolute w-full h-full bg-slate-800 text-white rounded-lg shadow-lg p-6 flex flex-col justify-center" style="backface-visibility: hidden;">
+                                    <h4 class="font-bold text-lg">Role: Knowledge Foundation</h4>
+                                    <p class="mt-2 text-sm text-slate-300">Provides programmatic access to the vast NCBI PubMed database of biomedical literature, serving as the trusted source for all generated content.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Tech Card: Vector DB -->
+                        <div class="tech-card" style="perspective: 1000px;">
+                            <div class="relative w-full h-52 transition-transform duration-500" style="transform-style: preserve-3d;">
+                                <div class="front absolute w-full h-full bg-white rounded-lg shadow-md p-6 flex flex-col justify-center items-center text-center" style="backface-visibility: hidden;">
+                                    <div class="text-4xl mb-2">🗄️</div>
+                                    <h3 class="text-lg font-bold text-slate-900">Vector Database</h3>
+                                    <p class="text-slate-600">Weaviate</p>
+                                </div>
+                                <div class="back absolute w-full h-full bg-slate-800 text-white rounded-lg shadow-lg p-6 flex flex-col justify-center" style="backface-visibility: hidden;">
+                                    <h4 class="font-bold text-lg">Role: High-Speed Retrieval</h4>
+                                    <p class="mt-2 text-sm text-slate-300">Stores and indexes the vector representations of medical text, allowing for ultra-fast semantic search to find the most relevant context for a given query.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Tech Card: Embedding Model -->
+                        <div class="tech-card" style="perspective: 1000px;">
+                            <div class="relative w-full h-52 transition-transform duration-500" style="transform-style: preserve-3d;">
+                                <div class="front absolute w-full h-full bg-white rounded-lg shadow-md p-6 flex flex-col justify-center items-center text-center" style="backface-visibility: hidden;">
+                                    <div class="text-4xl mb-2">🧠</div>
+                                    <h3 class="text-lg font-bold text-slate-900">Embedding Model</h3>
+                                    <p class="text-slate-600">S-PubMedBert-MS-MARCO</p>
+                                </div>
+                                <div class="back absolute w-full h-full bg-slate-800 text-white rounded-lg shadow-lg p-6 flex flex-col justify-center" style="backface-visibility: hidden;">
+                                    <h4 class="font-bold text-lg">Role: Semantic Understanding</h4>
+                                    <p class="mt-2 text-sm text-slate-300">Chosen for its specialized training on PubMed articles, this model creates highly accurate and contextually relevant vector embeddings for medical text.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Tech Card: LLM -->
+                        <div class="tech-card" style="perspective: 1000px;">
+                            <div class="relative w-full h-52 transition-transform duration-500" style="transform-style: preserve-3d;">
+                                <div class="front absolute w-full h-full bg-white rounded-lg shadow-md p-6 flex flex-col justify-center items-center text-center" style="backface-visibility: hidden;">
+                                    <div class="text-4xl mb-2">✍️</div>
+                                    <h3 class="text-lg font-bold text-slate-900">Large Language Model</h3>
+                                    <p class="text-slate-600">Qwen3 235B A22B</p>
+                                </div>
+                                <div class="back absolute w-full h-full bg-slate-800 text-white rounded-lg shadow-lg p-6 flex flex-col justify-center" style="backface-visibility: hidden;">
+                                    <h4 class="font-bold text-lg">Role: Content Generation</h4>
+                                    <p class="mt-2 text-sm text-slate-300">Selected for its high instruction-following score (IFEval) and Apache 2.0 license, this model synthesizes the retrieved context into accurate, hallucination-free articles.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Tech Card: Image Generation -->
+                        <div class="tech-card" style="perspective: 1000px;">
+                            <div class="relative w-full h-52 transition-transform duration-500" style="transform-style: preserve-3d;">
+                                <div class="front absolute w-full h-full bg-white rounded-lg shadow-md p-6 flex flex-col justify-center items-center text-center" style="backface-visibility: hidden;">
+                                    <div class="text-4xl mb-2">🎨</div>
+                                    <h3 class="text-lg font-bold text-slate-900">Image Generation</h3>
+                                    <p class="text-slate-600">FLUX1.1 [pro] Ultra</p>
+                                </div>
+                                <div class="back absolute w-full h-full bg-slate-800 text-white rounded-lg shadow-lg p-6 flex flex-col justify-center" style="backface-visibility: hidden;">
+                                    <h4 class="font-bold text-lg">Role: Medical Illustration</h4>
+                                    <p class="mt-2 text-sm text-slate-300">Chosen for its exceptional image quality and nuanced understanding of complex text prompts, ideal for generating specific and accurate medical visuals.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Tech Card: API & Orchestration -->
+                        <div class="tech-card" style="perspective: 1000px;">
+                            <div class="relative w-full h-52 transition-transform duration-500" style="transform-style: preserve-3d;">
+                                <div class="front absolute w-full h-full bg-white rounded-lg shadow-md p-6 flex flex-col justify-center items-center text-center" style="backface-visibility: hidden;">
+                                    <div class="text-4xl mb-2">⚙️</div>
+                                    <h3 class="text-lg font-bold text-slate-900">API & Orchestration</h3>
+                                    <p class="text-slate-600">FastAPI & Docker</p>
+                                </div>
+                                <div class="back absolute w-full h-full bg-slate-800 text-white rounded-lg shadow-lg p-6 flex flex-col justify-center" style="backface-visibility: hidden;">
+                                    <h4 class="font-bold text-lg">Role: Service & Deployment</h4>
+                                    <p class="mt-2 text-sm text-slate-300">FastAPI serves an OpenAI-compatible API endpoint for the pipeline. Docker containerizes the Weaviate vector DB for stable, isolated deployment.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Section 4: Detailed Technical Diagram -->
+            <section id="detailed-diagram" class="py-20 md:py-28 bg-white">
+                <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center">
+                        <h2 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Detailed Technical Diagram</h2>
+                        <p class="mt-4 max-w-3xl mx-auto text-lg leading-8 text-slate-600">
+                            This diagram provides a granular, step-by-step view of the entire pipeline, from data ingestion to final output. It distinguishes between proprietary code (blue) which we've developed, and external API calls (yellow) to third-party services.
+                        </p>
+                    </div>
+                    <div class="mt-16 diagram-flow">
+                        <div class="diagram-node node-proprietary">
+                            <h4 class="font-bold">Proprietary Script: `populate_db.py`</h4>
+                            <p class="text-sm">Initiates data ingestion process.</p>
+                        </div>
+                        <div class="diagram-arrow">&darr;</div>
+                        <div class="diagram-node node-api">
+                            <h4 class="font-bold">API Call: Entrez API</h4>
+                            <p class="text-sm">Fetches thousands of articles from PubMed.</p>
+                        </div>
+                        <div class="diagram-arrow">&darr;</div>
+                        <div class="diagram-node node-proprietary">
+                            <h4 class="font-bold">Proprietary Code: Text Chunking</h4>
+                            <p class="text-sm">Splits raw text into smaller, overlapping chunks for processing.</p>
+                        </div>
+                        <div class="diagram-arrow">&darr;</div>
+                        <div class="diagram-node node-proprietary">
+                            <h4 class="font-bold">Proprietary Code: Embedding Generation</h4>
+                            <p class="text-sm">Uses `S-PubMedBert-MS-MARCO` model locally to convert text chunks into vectors.</p>
+                        </div>
+                        <div class="diagram-arrow">&darr;</div>
+                        <div class="diagram-node node-proprietary">
+                            <h4 class="font-bold">Proprietary Code: Database Population</h4>
+                            <p class="text-sm">Connects to Weaviate instance and stores the text chunks and their vectors.</p>
+                        </div>
+                        <div class="diagram-arrow font-bold text-slate-500 my-4">[End of Ingestion Phase]</div>
+                        <div class="diagram-node node-api">
+                            <h4 class="font-bold">API Call: User Query via FastAPI Endpoint</h4>
+                            <p class="text-sm">User submits a topic (e.g., "diabetic retinopathy").</p>
+                        </div>
+                        <div class="diagram-arrow">&darr;</div>
+                        <div class="diagram-node node-proprietary">
+                            <h4 class="font-bold">Proprietary Code: RAG Pipeline Logic</h4>
+                            <p class="text-sm">Orchestrates the retrieval and generation process.</p>
+                        </div>
+                        <div class="diagram-arrow">&darr;</div>
+                        <div class="diagram-node node-proprietary">
+                            <h4 class="font-bold">Proprietary Code: Vector Search</h4>
+                            <p class="text-sm">Queries the Weaviate DB to find the top N most relevant text chunks.</p>
+                        </div>
+                        <div class="diagram-arrow">&darr;</div>
+                        <div class="diagram-node node-proprietary">
+                            <h4 class="font-bold">Proprietary Code: Prompt Engineering</h4>
+                            <p class="text-sm">Constructs detailed prompts for both the LLM and the image model, including the retrieved context.</p>
+                        </div>
+                        <div class="diagram-arrow">&darr;</div>
+                        <div class="flex flex-col md:flex-row w-full max-w-4xl justify-center items-start">
+                            <div class="flex flex-col items-center w-full md:w-1/2 p-2">
+                                 <div class="diagram-node node-api w-full">
+                                    <h4 class="font-bold">API Call: Qwen3 235B A22B</h4>
+                                    <p class="text-sm">Sends text prompt to generate article.</p>
+                                </div>
+                                <div class="diagram-arrow">&darr;</div>
+                                 <div class="diagram-node node-proprietary w-full">
+                                    <h4 class="font-bold">Output: Generated Text</h4>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center w-full md:w-1/2 p-2">
+                                <div class="diagram-node node-api w-full">
+                                    <h4 class="font-bold">API Call: FLUX.1 [pro] Ultra</h4>
+                                    <p class="text-sm">Sends image prompt to generate illustration.</p>
+                                </div>
+                                <div class="diagram-arrow">&darr;</div>
+                                 <div class="diagram-node node-proprietary w-full">
+                                    <h4 class="font-bold">Output: Generated Image</h4>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="diagram-arrow">&darr;</div>
+                         <div class="diagram-node node-proprietary">
+                            <h4 class="font-bold">Final Output</h4>
+                            <p class="text-sm">Combines text and image into the final article and returns to user.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="bg-slate-900 text-white">
+            <div class="container mx-auto py-6 px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-400">
+                <p>Medical Article Generator Summary</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modals for Architecture Steps -->
+    <div id="modal-1" class="modal hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-8 relative">
+            <button data-close-button class="absolute top-4 right-4 text-slate-500 hover:text-slate-800 text-3xl leading-none">&times;</button>
+            <h3 class="text-2xl font-bold text-blue-800">Stage 1: Ingest & Index</h3>
+            <p class="mt-4 text-slate-600">This is the foundational, offline phase where the system builds its knowledge. It involves programmatically fetching thousands of articles from PubMed, breaking them into smaller, digestible chunks, and then using an embedding model to convert each chunk into a numerical vector. These vectors, which capture the semantic meaning of the text, are then stored and indexed in the Weaviate vector database, creating a searchable library of medical knowledge.</p>
+        </div>
+    </div>
+    <div id="modal-2" class="modal hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-8 relative">
+            <button data-close-button class="absolute top-4 right-4 text-slate-500 hover:text-slate-800 text-3xl leading-none">&times;</button>
+            <h3 class="text-2xl font-bold text-green-800">Stage 2: Retrieve & Augment</h3>
+            <p class="mt-4 text-slate-600">When a user submits a query (e.g., "articles on diabetic retinopathy"), this stage begins. The system converts the user's query into a vector and uses it to search the Weaviate database. It retrieves the most semantically similar text chunks from the indexed articles. This retrieved information forms the "context" that will be used to ground the AI's response in factual, verifiable data. This is the "Retrieval" in RAG.</p>
+        </div>
+    </div>
+    <div id="modal-3" class="modal hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-8 relative">
+            <button data-close-button class="absolute top-4 right-4 text-slate-500 hover:text-slate-800 text-3xl leading-none">&times;</button>
+            <h3 class="text-2xl font-bold text-amber-800">Stage 3: Generate & Synthesize</h3>
+            <p class="mt-4 text-slate-600">In the final stage, the retrieved context and the original user query are passed to a Large Language Model (LLM). The LLM's task is not to answer from its general knowledge, but to synthesize the provided context into a comprehensive, well-written article. Simultaneously, a prompt is generated for the image model to create a relevant illustration. The final output is a complete article, grounded in the source data and enhanced with a custom visual.</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Password Gate Logic
+            const passwordGate = document.getElementById('password-gate');
+            const passwordForm = document.getElementById('password-form');
+            const passwordInput = document.getElementById('password-input');
+            const errorMessage = document.getElementById('error-message');
+            const mainContent = document.getElementById('main-content');
+            const correctPassword = "OOG-Health-RESMP.DEV";
+
+            document.body.style.overflow = 'hidden';
+
+            passwordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (passwordInput.value === correctPassword) {
+                    passwordGate.style.opacity = '0';
+                    setTimeout(() => {
+                        passwordGate.classList.add('hidden');
+                    }, 500);
+
+                    mainContent.classList.remove('hidden');
+                    document.body.style.overflow = 'auto';
+                } else {
+                    errorMessage.classList.remove('hidden');
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                    const gateBox = passwordGate.querySelector('div');
+                    gateBox.animate([
+                        { transform: 'translateX(0)' },
+                        { transform: 'translateX(-10px)' },
+                        { transform: 'translateX(10px)' },
+                        { transform: 'translateX(-10px)' },
+                        { transform: 'translateX(10px)' },
+                        { transform: 'translateX(0)' }
+                    ], {
+                        duration: 500,
+                        easing: 'ease-in-out'
+                    });
+                }
+            });
+
+            // Mobile menu toggle
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // Close mobile menu when a link is clicked
+            document.querySelectorAll('#mobile-menu a').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+            
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if(targetElement) {
+                        const headerOffset = document.getElementById('header').offsetHeight;
+                        const elementPosition = targetElement.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                        window.scrollTo({
+                            top: offsetPosition,
+                            behavior: "smooth"
+                        });
+                    }
+                });
+            });
+
+            // Modal logic
+            const openModalButtons = document.querySelectorAll('[data-modal-target]');
+            const closeModalButtons = document.querySelectorAll('[data-close-button]');
+
+            openModalButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const modal = document.getElementById(button.dataset.modalTarget);
+                    openModal(modal);
+                });
+            });
+
+            closeModalButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const modal = button.closest('.modal');
+                    closeModal(modal);
+                });
+            });
+            
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        closeModal(modal);
+                    }
+                });
+            });
+
+            function openModal(modal) {
+                if (modal == null) return;
+                modal.classList.remove('hidden');
+            }
+
+            function closeModal(modal) {
+                if (modal == null) return;
+                modal.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
