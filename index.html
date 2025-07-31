@@ -97,7 +97,7 @@
                         <a href="#detailed-diagram" class="font-medium text-slate-600 hover:text-blue-600 transition-colors">Diagram</a>
                     </nav>
                     <div class="md:hidden">
-                        <button id="mobile-menu-button" class="p-2 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100">
+                        <button id="mobile-menu-button" title="Open mobile menu" class="p-2 rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
                         </button>
                     </div>
@@ -305,7 +305,7 @@
                             <h4 class="font-bold">Proprietary Code: Database Population</h4>
                             <p class="text-sm">Connects to Weaviate instance and stores the text chunks and their vectors.</p>
                         </div>
-                        <div class="diagram-arrow font-bold text-slate-500 my-4">[End of Ingestion Phase]</div>
+                        <div class="diagram-arrow font-bold text-black text-sm my-4">End of Ingestion Phase</div>
                         <div class="diagram-node node-api">
                             <h4 class="font-bold">API Call: User Query via FastAPI Endpoint</h4>
                             <p class="text-sm">User submits a topic (e.g., "diabetic retinopathy").</p>
